@@ -56,7 +56,7 @@ namespace model{
 
         std::vector<int32_t> encode(const string& sentence) const override;
         std::string decode(int32_t token_idx) const override;
-
+        std::string decode(std::vector<int32_t> token_idxs) const override;
         int32_t get_eos() const override;
         std::pair<tensor::Tensor,tensor::Tensor> slice_kv_cache(int32_t layer_idx,int32_t token_pos) const override;
 

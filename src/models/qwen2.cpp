@@ -80,6 +80,11 @@ std::string model::Qwen2Model::decode(int32_t token_idx) const
     return encode_layer_->decode(token_idx);
 }
 
+std::string model::Qwen2Model::decode(std::vector<int32_t> token_idxs) const
+{
+    CHECK(encode_layer_ != nullptr);
+    return encode_layer_->decode(token_idxs);
+}
 int32_t model::Qwen2Model::get_eos() const
 {
     // CHECK(this->encode_layer_ != nullptr);
@@ -192,7 +197,8 @@ void model::Qwen2Model::init_mem()
     CHECK(insert_buffer(ModelBufferType::kFFNRMSNorm, rms_output));
 
     Tensor w1_output(base::DataType::kDataTypeFp32, config_->hidden_dim_, true, alloc);
-    Tensor w3_output(base::DataType::kDataTypeFp32, config_->hidden_dim_, true, alloc);    CHECK(insert_buffer(ModelBufferType::kW1Output, w1_output));
+    Tensor w3_output(base::DataType::kDataTypeFp32, config_->hidden_dim_, true, alloc);   
+    CHECK(insert_buffer(ModelBufferType::kW1Output, w1_output));
     CHECK(insert_buffer(ModelBufferType::kW3Output, w3_output));
 
     Tensor key_cache(base::DataType::kDataTypeFp32, config_->layer_num_, config_->seq_len_,config_->kv_dim_, true, alloc);
@@ -362,13 +368,13 @@ void model::Qwen2Model::create_param_layers()
     int32_t hidden_dim = config_->hidden_dim_;
     for(int32_t i = 0;i < config_->layer_num_;i++){
         auto w1 = std::make_shared<op::MatmulLayer>(device_type_,hidden_dim,dim);
-        w1->set_weight(0,{dim,hidden_dim},this->raw_model_data_->weight(pos),cpu_device_type);
+        w1->set_weight(0,{hidden_dim,dim},this->raw_model_data_->weight(pos),cpu_device_type);
         qwen_layers_->w1_layers_.push_back(w1);
         pos += dim * hidden_dim;
     }
     
     for(int32_t i = 0;i < config_->layer_num_;i++){
-        auto w2 = std::make_shared<op::MatmulLayer>(device_type_,hidden_dim,dim);
+        auto w2 = std::make_shared<op::MatmulLayer>(device_type_,dim,hidden_dim);
         w2->set_weight(0,{dim,hidden_dim},this->raw_model_data_->weight(pos),cpu_device_type);
         qwen_layers_->w2_layers_.push_back(w2);
         pos += dim * hidden_dim;
@@ -376,7 +382,7 @@ void model::Qwen2Model::create_param_layers()
 
     for(int32_t i = 0;i < config_->layer_num_;i++){
         auto w3 = std::make_shared<op::MatmulLayer>(device_type_,hidden_dim,dim);
-        w3->set_weight(0,{dim,hidden_dim},this->raw_model_data_->weight(pos),cpu_device_type);
+        w3->set_weight(0,{hidden_dim,dim},this->raw_model_data_->weight(pos),cpu_device_type);
         qwen_layers_->w3_layers_.push_back(w3);
         pos += dim * hidden_dim;
     }
@@ -516,10 +522,9 @@ void model::Qwen2Model::feed_forward(int32_t layer_idx, const tensor::Tensor &in
     Tensor w1_output = get_buffer(ModelBufferType::kW1Output);
     const auto& w1_layer = qwen_layers_->w1_layers_.at(layer_idx);
     CHECK_NE(w1_layer, nullptr) << "The w1 layer in the feedforward block is null pointer";
-    w1_layer->forward(ffn_norm_output, w1_output);
-    // STATUS_CHECK(
-    //     w1_layer->forward(ffn_norm_output, w1_output)
-    // );
+    STATUS_CHECK(
+        w1_layer->forward(ffn_norm_output, w1_output);
+    );
 
     //w3
     Tensor w3_output = get_buffer(ModelBufferType::kW3Output);
@@ -537,7 +542,7 @@ void model::Qwen2Model::feed_forward(int32_t layer_idx, const tensor::Tensor &in
 
     //w2
     Tensor w2_output = get_buffer(ModelBufferType::kW2Output);
-    const auto& w2_layer = qwen_layers_->w3_layers_.at(layer_idx);
+    const auto& w2_layer = qwen_layers_->w2_layers_.at(layer_idx);
     CHECK_NE(w2_layer, nullptr) << "The w2 layer in the feedforward block is null pointer";
     STATUS_CHECK(
         w2_layer->forward(w1_output, w2_output)

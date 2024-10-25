@@ -1,7 +1,8 @@
+#include "base/base.h"
 #include "base/tick.h"
 #include "glog/logging.h"
 #include "models/qwen2.h"
-#include "base/base.h"
+
 using std::string;
 using std::vector;
 using namespace tensor;
@@ -16,7 +17,8 @@ int32_t generate(const model::Qwen2Model& model, const std::string& sentence, in
     bool is_prompt = true;
     const auto& prompt_embedding = model.embedding(tokens);
     tensor::Tensor pos_tensor = model.get_buffer(model::ModelBufferType::kInputPos);
-
+    std::vector<int32_t> words;
+    words.push_back(next);
     while(pos < total_steps){
         pos_tensor.index<int32_t>(0) = pos;
         if(pos < prompt_len - 1){
@@ -32,25 +34,32 @@ int32_t generate(const model::Qwen2Model& model, const std::string& sentence, in
         if(model.is_sentence_ending(next)){
             break;
         }
-        string word;
+        // string word;
         if(is_prompt){
             next = tokens.at(pos + 1);
-            word = model.decode(next);
+            words.push_back(next);
+            // word = model.decode(next);
         }else{
-            word = model.decode(next);
+            words.push_back(next);
+            // word = model.decode(next);
         }
 
-        if(need_output){
-            std::cout << word.c_str() <<std::endl;
-        }
+        // if(need_output){
+        //     std::cout << word.c_str() <<std::endl;
+        // }
 
         pos += 1;
     }
 
+    if (need_output) {
+        printf("%s ", model.decode(words).data());
+        fflush(stdout);
+    }
     return std::min(pos,total_steps);
 }
 
 int main(int argc,char* argv[]){
+    using namespace std;
     if (argc != 3) {
         LOG(INFO) << "Usage: ./demo checkpoint_path tokenizer_path ";
         return -1;
@@ -63,13 +72,20 @@ int main(int argc,char* argv[]){
     if(!init_status){
         LOG(FATAL) << "The model init failed, the error code is: " << init_status.get_err_code();
     }
+    string sentence;
+    cout<<"can i help you? tell me your question..."<<endl;
+        sentence = "你好";
+        generate(model, sentence, 128, true);
+        cout<<endl;
+        cout<< "continue?" <<endl;
 
-    const std::string& sentence = "你好";
-
-    generate(model, sentence, 128, true);
-    generate(model, sentence, 128, true);
-
-
+    // while(1){
+    //     cin >> sentence;
+    //     generate(model, sentence, 128, true);
+    //     cout<<endl;
+    //     cout<< "continue?" <<endl;
+    // }
+    // const std::string& sentence = "你好";
 
     return 0;
 }

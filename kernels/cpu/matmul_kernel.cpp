@@ -35,7 +35,6 @@ void kernel::matmul_kernel_cpu(const tensor::Tensor &input, const tensor::Tensor
     arma::fmat output_mat(const_cast<float*>(output_ptr),in_dims[1],wei_dims[0],false,true);
     
     output_mat = (input_mat * weight_mat) * scale;
-    
 }
 
 #else

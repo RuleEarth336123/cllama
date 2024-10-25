@@ -56,7 +56,7 @@ namespace model{
          * @return 返回解码后的字符串。
          */
         virtual std::string decode(int32_t token_idx) const = 0;
-
+        virtual std::string decode(std::vector<int32_t> token_idxs) const = 0;
     protected:
         /**
          * 将给定的张量插入到指定的缓冲区中。如果缓冲区已存在或张量为空，则返回错误。
