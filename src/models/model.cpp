@@ -119,6 +119,8 @@ base::Status model::Model::read_model_file()
     }
 
     if(!is_quant_model_){
+        raw_model_data_->weight_data = static_cast<int8_t*>(raw_model_data_->data);
+    }else{
         raw_model_data_->weight_data = static_cast<int8_t*>(raw_model_data_->data) + sizeof(ModelConfig) + sizeof(group_size_);
     }
 
@@ -147,7 +149,12 @@ base::Status model::Model::create_encode_layer()
     // }
 
     //encode_layer_ = std::make_unique<op::EncodeLayer>(device_type_,true,false,std::move(spe));
-    encode_layer_ = std::make_unique<op::QwenEncodeLayer>(this->token_path_, false, false);
+    if (tokenizer_type_ == TokenizerType::kEncodeSpe) {
+        encode_layer_ = std::make_unique<op::SpeEncodeLayer>(this->token_path_, true, false);
+    }else{
+        encode_layer_ = std::make_unique<op::QwenEncodeLayer>(this->token_path_, false, false);
+    }
+    
     config_->vocab_size_ = encode_layer_->vocab_size();
     if(!encode_layer_){
         std::cerr << "Create the encode layer failed." <<std::endl;

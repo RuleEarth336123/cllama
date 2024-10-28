@@ -72,12 +72,11 @@ int main(int argc,char* argv[]){
     if(!init_status){
         LOG(FATAL) << "The model init failed, the error code is: " << init_status.get_err_code();
     }
-    string sentence;
     cout<<"can i help you? tell me your question..."<<endl;
-        sentence = "你好";
-        generate(model, sentence, 128, true);
-        cout<<endl;
-        cout<< "continue?" <<endl;
+    const std::string& sentence = "你好";
+    generate(model, sentence, 128, true);
+    cout<<endl;
+    cout<< "continue?" <<endl;
 
     // while(1){
     //     cin >> sentence;

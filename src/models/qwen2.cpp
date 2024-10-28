@@ -42,6 +42,7 @@ base::Status model::Qwen2Model::predict(const tensor::Tensor& input, const tenso
     if(!status){
         std::cerr << "predict fail!" <<std::endl;
     }
+    
     next = post_processing(pos_tensor, is_prompt);
     return base::error::Success();
 }
@@ -136,10 +137,8 @@ op::embedingOutput model::Qwen2Model::embedding(const std::vector<int> &tokens) 
         qwen_layers_->embedding_layer_->forward(input_tokens,input_token_num,input_embeddings)
     );
 
-    op::embedingOutput output;
-    output.input_embedings = input_embeddings;
-    output.input_tokens = input_tokens;
-    output.input_token_num = input_token_num;
+    op::embedingOutput output(input_tokens,input_embeddings,input_token_num);
+
 
     return output;
 }
@@ -180,14 +179,12 @@ void model::Qwen2Model::init_mem()
 
     Tensor input_tokens(base::DataType::kDataTypeInt32, 1, true, alloc_cpu);
     Tensor input_embeddings(base::DataType::kDataTypeFp32, 1, config_->dim_, true, alloc);
-    CHECK(insert_buffer(ModelBufferType::kInputTokens, input_tokens));
-    CHECK(insert_buffer(ModelBufferType::kInputEmbeddings, input_embeddings));
-
-
     tensor::Tensor sin_cache(base::DataType::kDataTypeFp32, config_->head_size_ * config_->seq_len_,true, alloc);
     tensor::Tensor cos_cache(base::DataType::kDataTypeFp32, config_->head_size_ * config_->seq_len_,true, alloc);
     CHECK(insert_buffer(ModelBufferType::kSinCache, sin_cache));
     CHECK(insert_buffer(ModelBufferType::kCosCache, cos_cache));
+    CHECK(insert_buffer(ModelBufferType::kInputTokens, input_tokens));
+    CHECK(insert_buffer(ModelBufferType::kInputEmbeddings, input_embeddings));
 
 
     Tensor rms_output(base::DataType::kDataTypeFp32, config_->dim_, true, alloc);
@@ -611,5 +608,5 @@ int32_t model::Qwen2Model::post_processing(const tensor::Tensor &pos, bool is_pr
             forward_logits, forward_output.size(),nullptr
         ));
     }
-    return 0;
+    return next;
 }
