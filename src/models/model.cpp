@@ -36,7 +36,7 @@ tensor::Tensor &model::Model::get_buffer(ModelBufferType buffer_idx)
 
 const tensor::Tensor &model::Model::get_buffer(ModelBufferType buffer_idx) const
 {
-    CHECK_GE(buffers_.count(buffer_idx),0) << int(buffer_idx);
+    CHECK_GE(buffers_.count(buffer_idx),0);
     return buffers_.at(buffer_idx);
 }
 
