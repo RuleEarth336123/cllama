@@ -34,27 +34,27 @@ int32_t generate(const model::Qwen2Model& model, const std::string& sentence, in
         if(model.is_sentence_ending(next)){
             break;
         }
-        // string word;
+        string word;
         if(is_prompt){
             next = tokens.at(pos + 1);
-            words.push_back(next);
-            // word = model.decode(next);
+            // words.push_back(next);
+            word = model.decode(next);
         }else{
-            words.push_back(next);
-            // word = model.decode(next);
+            // words.push_back(next);
+            word = model.decode(next);
         }
 
-        // if(need_output){
-        //     std::cout << word.c_str() <<std::endl;
-        // }
+        if(need_output){
+            std::cout << word.c_str()<<" ";
+        }
 
         pos += 1;
     }
 
-    if (need_output) {
-        printf("%s ", model.decode(words).data());
-        fflush(stdout);
-    }
+    // if (need_output) {
+    //     printf("%s ", model.decode(words).data());
+    //     fflush(stdout);
+    // }
     return std::min(pos,total_steps);
 }
 
@@ -73,7 +73,7 @@ int main(int argc,char* argv[]){
         LOG(FATAL) << "The model init failed, the error code is: " << init_status.get_err_code();
     }
     cout<<"can i help you? tell me your question..."<<endl;
-    const std::string& sentence = "你好";
+    const std::string& sentence = "why the sky is blue?";
     generate(model, sentence, 128, true);
     cout<<endl;
     cout<< "continue?" <<endl;

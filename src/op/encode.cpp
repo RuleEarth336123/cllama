@@ -107,7 +107,11 @@ std::vector<int32_t> BpeEncodeLayer::encode(const std::string& sentence) const {
   return input_ids;
 }
 
-std::string BpeEncodeLayer::decode(int32_t token_id) const { return ""; }
+std::string BpeEncodeLayer::decode(int32_t token_id) const {
+  std::vector<int32_t> token_ids = {token_id};
+        // 调用现有的 decode 函数进行解码
+        return decode(token_ids);
+}
 
 std::string BpeEncodeLayer::decode(const std::vector<int32_t>& token_ids) const {
   CHECK(this->tiktoken_ != nullptr);
